@@ -1,0 +1,37 @@
+name: "CI-CD"
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+
+  build:
+    name: Build image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Configuring aws credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-Id: ${{ secrets.AWS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRETE_ID }}
+          aws-region: us-east-1
+
+      - name: Login into Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build and push image to amazon ECR
+        env: 
+          ECR_REGISTRY: ${{steps.login-ecr.output.registery }}
+          ECR_REPOSITORY: mydockerrepo
+          IMAGE_TAG: ${{ github.sha }}
+
+        run: |
+          docker build -t $ECR_REGITRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:#IMAGE_TAG
